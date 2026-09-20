@@ -2,7 +2,6 @@ require('dotenv').config();
 
 const express = require('express');
 const cors = require('cors');
-const crypto = require('crypto');
 const path = require('path');
 const connectDB = require('./db');
 const Player = require('./modules/player');
@@ -10,11 +9,22 @@ const Player = require('./modules/player');
 const app = express();
 const port = Number(process.env.PORT || 3000);
 const steamApiKey = process.env.STEAM_API_KEY;
-const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+const frontendUrls = (process.env.FRONTEND_VERCEL_URL || 'http://localhost:5173')
+    .split(',')
+    .map((url) => url.trim())
+    .filter(Boolean);
 
 let databaseConnection;
 
-app.use(cors({ origin: frontendUrl }));
+app.use(cors({
+    origin(origin, callback) {
+        if (!origin || frontendUrls.includes(origin)) {
+            return callback(null, true);
+        }
+
+        return callback(new Error('Origin is not allowed by CORS'));
+    }
+}));
 app.use(express.json({ limit: '1mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -87,19 +97,45 @@ async function fetchSteamBans(steamId) {
     url.searchParams.set('steamids', steamId);
 
     const data = await steamRequest(url);
-    return data?.players?.[0] || null;
+    const bans = data?.players?.[0];
+    return { vacBanned: Boolean(bans?.VACBanned) };
+}
+
+async function fetchSteamProfile(steamId) {
+    if (!steamApiKey) {
+        throw new Error('STEAM_API_KEY is required');
+    }
+
+    const url = new URL('https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/');
+    url.searchParams.set('key', steamApiKey);
+    url.searchParams.set('steamids', steamId);
+
+    const data = await steamRequest(url);
+    return data?.response?.players?.[0] || null;
 }
 
 function normaliseStats(stats) {
     if (!stats || typeof stats !== 'object') return null;
+    if (Object.keys(stats).length === 0) return {};
 
     const values = {
-        reactionTime: Number(stats.reactionTime),
-        kdRatio: Number(stats.kdRatio),
-        wallbangKillPercent: Number(stats.wallbangKillPercent)
+        totalKills: stats.totalKills === undefined ? undefined : Number(stats.totalKills),
+        totalDeaths: stats.totalDeaths === undefined ? undefined : Number(stats.totalDeaths),
+        headshotPercent: stats.headshotPercent === undefined ? undefined : Number(stats.headshotPercent),
+        winRate: stats.winRate === undefined ? undefined : Number(stats.winRate),
+        damagePerRound: stats.damagePerRound === undefined ? undefined : Number(stats.damagePerRound),
+        accuracy: stats.accuracy === undefined ? undefined : Number(stats.accuracy),
+        mvpCount: stats.mvpCount === undefined ? undefined : Number(stats.mvpCount),
+        roundsPlayed: stats.roundsPlayed === undefined ? undefined : Number(stats.roundsPlayed),
+        favoriteWeapon: stats.favoriteWeapon
     };
 
-    if (Object.values(values).some((value) => !Number.isFinite(value) || value < 0)) {
+    const numericValues = Object.entries(values)
+        .filter(([key, value]) => key !== 'favoriteWeapon' && value !== undefined)
+        .map(([, value]) => value);
+
+    if (numericValues.some((value) => !Number.isFinite(value) || value < 0)
+        || (values.favoriteWeapon !== undefined && typeof values.favoriteWeapon !== 'string')) {
         throw new Error('Stats must contain valid non-negative numbers');
     }
 
@@ -107,10 +143,20 @@ function normaliseStats(stats) {
 }
 
 function calculateCheatProbability(stats) {
-    if (!stats) return 'unknown';
-    if (stats.reactionTime < 150 || stats.wallbangKillPercent > 5 || stats.kdRatio > 1.8) return 'high';
-    if (stats.reactionTime < 180 || stats.wallbangKillPercent > 3) return 'medium';
-    return 'low';
+    if (!stats || !Number.isFinite(stats.headshotPercent) || !Number.isFinite(stats.accuracy)) return null;
+
+    const headshotScore = Math.min(stats.headshotPercent / 100, 1);
+    const accuracyScore = Math.min(stats.accuracy / 100, 1);
+    return Math.round((headshotScore * 0.5 + accuracyScore * 0.5) * 100);
+}
+
+function serializePlayer(player) {
+    const data = player.toObject ? player.toObject() : player;
+    return {
+        ...data,
+        id: data._id.toString(),
+        reports: (data.reports || []).map(({ type, createdAt }) => ({ type, createdAt }))
+    };
 }
 
 app.get('/health', (req, res) => {
@@ -135,7 +181,7 @@ app.use('/players', async (req, res, next) => {
 app.get('/players', async (req, res, next) => {
     try {
         const players = await Player.find().sort({ createdAt: -1 }).lean();
-        res.json({ success: true, count: players.length, data: players });
+        res.json({ success: true, data: players.map(serializePlayer) });
     } catch (error) {
         next(error);
     }
@@ -149,22 +195,72 @@ app.post('/players', async (req, res, next) => {
             return res.status(400).json({ success: false, error: 'profileUrl is required' });
         }
 
-        const identifier = getProfileIdentifier(profileUrl);
         const steamId = await getSteamIdFromUrl(profileUrl);
+        const profile = await fetchSteamProfile(steamId);
         const steamBans = await fetchSteamBans(steamId);
         const parsedStats = normaliseStats(stats);
 
         const player = await Player.create({
-            id: crypto.randomUUID(),
-            username: identifier.value,
+            username: profile?.personaname || steamId,
             profileUrl: profileUrl.trim().replace(/\/+$/, ''),
             steamId,
-            stats: parsedStats,
+            stats: parsedStats || {},
             cheatProbability: calculateCheatProbability(parsedStats),
-            steamBans
+            steamBans,
+            reputation: { positive: 0, negative: 0 },
+            reports: []
         });
 
-        res.status(201).json({ success: true, data: player });
+        res.status(201).json({ success: true, data: serializePlayer(player) });
+    } catch (error) {
+        if (error?.code === 11000) {
+            return res.status(409).json({ success: false, error: 'Player is already tracked' });
+        }
+        next(error);
+    }
+});
+
+app.post('/players/:playerId/reputation', async (req, res, next) => {
+    try {
+        const { vote, reason, voterId } = req.body;
+        const allowedReasons = ['Wallhack', 'Aim assist', 'Farmer bot', 'Other cheating'];
+
+        if (!['positive', 'negative'].includes(vote)) {
+            return res.status(400).json({ success: false, error: 'vote must be positive or negative' });
+        }
+        if (typeof voterId !== 'string' || !voterId.trim()) {
+            return res.status(400).json({ success: false, error: 'voterId is required' });
+        }
+        if (vote === 'negative' && !allowedReasons.includes(reason)) {
+            return res.status(400).json({ success: false, error: 'A valid report reason is required' });
+        }
+
+        const player = await Player.findByIdAndUpdate(
+            {
+                _id: req.params.playerId,
+                'reports.voterId': { $ne: voterId.trim() }
+            },
+            {
+                $inc: { [`reputation.${vote}`]: 1 },
+                $push: {
+                    reports: {
+                        type: vote === 'positive' ? 'Positive reputation' : reason,
+                        voterId: voterId.trim(),
+                        createdAt: new Date()
+                    }
+                }
+            },
+            { new: true }
+        );
+        if (!player) {
+            const existingPlayer = await Player.exists({ _id: req.params.playerId });
+            return res.status(existingPlayer ? 409 : 404).json({
+                success: false,
+                error: existingPlayer ? 'You have already voted for this player' : 'Player not found'
+            });
+        }
+
+        res.json({ success: true, data: player.reputation });
     } catch (error) {
         next(error);
     }
@@ -172,7 +268,7 @@ app.post('/players', async (req, res, next) => {
 
 app.delete('/players/:id', async (req, res, next) => {
     try {
-        const player = await Player.findOneAndDelete({ id: req.params.id });
+        const player = await Player.findByIdAndDelete(req.params.id);
 
         if (!player) {
             return res.status(404).json({ success: false, error: 'Player not found' });
