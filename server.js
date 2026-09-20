@@ -3,6 +3,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const crypto = require('crypto');
+const path = require('path');
 const connectDB = require('./db');
 const Player = require('./modules/player');
 
@@ -15,7 +16,7 @@ let databaseConnection;
 
 app.use(cors({ origin: frontendUrl }));
 app.use(express.json({ limit: '1mb' }));
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, 'public')));
 
 function getProfileIdentifier(profileUrl) {
     let url;
@@ -114,6 +115,10 @@ function calculateCheatProbability(stats) {
 
 app.get('/health', (req, res) => {
     res.json({ success: true, status: 'ok' });
+});
+
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 app.use('/players', async (req, res, next) => {
