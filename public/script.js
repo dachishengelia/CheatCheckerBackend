@@ -2,6 +2,24 @@ const inputUrl = document.getElementById('input-url');
 const checkBtn = document.getElementById('check-btn');
 const statsCards = document.getElementById('stats-cards');
 const submitButton = document.getElementById('check-btn');
+const backendStatus = document.getElementById('backend-status');
+
+async function checkBackendStatus() {
+    try {
+        const response = await fetch('/health');
+
+        if (!response.ok) {
+            throw new Error(`Health check returned ${response.status}`);
+        }
+
+        backendStatus.textContent = 'Backend is working';
+        backendStatus.classList.add('online');
+    } catch (err) {
+        backendStatus.textContent = 'Backend is unavailable';
+        backendStatus.classList.add('offline');
+        console.error('Backend health check failed:', err);
+    }
+}
 
 async function fetchPlayers() {
     try {
@@ -62,4 +80,5 @@ submitButton.addEventListener('click', async () => {
     }
 });
 
+checkBackendStatus();
 fetchPlayers();

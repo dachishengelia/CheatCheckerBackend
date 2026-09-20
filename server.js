@@ -11,9 +11,7 @@ const port = Number(process.env.PORT || 3000);
 const steamApiKey = process.env.STEAM_API_KEY;
 const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
 
-if (!steamApiKey) {
-    throw new Error('STEAM_API_KEY is required');
-}
+let databaseConnection;
 
 app.use(cors({ origin: frontendUrl }));
 app.use(express.json({ limit: '1mb' }));
@@ -61,6 +59,10 @@ async function getSteamIdFromUrl(profileUrl) {
         return identifier.value;
     }
 
+    if (!steamApiKey) {
+        throw new Error('STEAM_API_KEY is required');
+    }
+
     const url = new URL('https://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/');
     url.searchParams.set('key', steamApiKey);
     url.searchParams.set('vanityurl', identifier.value);
@@ -75,6 +77,10 @@ async function getSteamIdFromUrl(profileUrl) {
 }
 
 async function fetchSteamBans(steamId) {
+    if (!steamApiKey) {
+        throw new Error('STEAM_API_KEY is required');
+    }
+
     const url = new URL('https://api.steampowered.com/ISteamUser/GetPlayerBans/v1/');
     url.searchParams.set('key', steamApiKey);
     url.searchParams.set('steamids', steamId);
@@ -108,6 +114,17 @@ function calculateCheatProbability(stats) {
 
 app.get('/health', (req, res) => {
     res.json({ success: true, status: 'ok' });
+});
+
+app.use('/players', async (req, res, next) => {
+    try {
+        databaseConnection ??= connectDB();
+        await databaseConnection;
+        next();
+    } catch (error) {
+        databaseConnection = undefined;
+        next(error);
+    }
 });
 
 app.get('/players', async (req, res, next) => {
@@ -176,7 +193,11 @@ async function start() {
     app.listen(port, () => console.log(`Server running at http://localhost:${port}`));
 }
 
-start().catch((error) => {
-    console.error('Startup failed:', error.message);
-    process.exit(1);
-});
+if (require.main === module) {
+    start().catch((error) => {
+        console.error('Startup failed:', error.message);
+        process.exit(1);
+    });
+}
+
+module.exports = app;
