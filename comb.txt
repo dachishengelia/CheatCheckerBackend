@@ -1,0 +1,4 @@
+ctrl + f
+ctrl + shift + f
+ctrl + h
+ctrl + shift + h

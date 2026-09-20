@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CheatChecker Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #121212; color: #fff; padding: 20px; }
+        #container { max-width: 600px; margin: auto; }
+        input { width: 70%; padding: 10px; background: #222; border: 1px solid #444; color: #fff; }
+        button { padding: 10px 20px; background: #00ffcc; border: none; font-weight: bold; cursor: pointer; }
+        .card { background: #1e1e1e; border: 1px solid #333; padding: 15px; margin-top: 15px; border-radius: 5px; }
+        .high { color: #ff4444; }
+        .medium { color: #ffbb33; }
+        .low { color: #00C851; }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <h2>CS2 CheatChecker</h2>
+        <div style="display: flex; gap: 10px;">
+            <input type="text" id="input-url" placeholder="Paste Steam Profile URL...">
+            <button id="check-btn">Check Player</button>
+        </div>
+
+        <div id="stats-cards">
+         
+        </div>
+    </div> 
+
+    <script src="script.js"></script>
+</body>
+</html>

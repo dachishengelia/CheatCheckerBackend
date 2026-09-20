@@ -1,0 +1,229 @@
+==================================================
+        COMPLETE JAVASCRIPT & DOM CHEAT SHEET
+==================================================
+
+1. VARIABLES & DATA TYPES
+- let: Declares a variable that can be changed later.
+- const: Declares a constant variable that cannot be reassigned.
+- Data Types: Strings ("Hello"), Numbers (42), Booleans (true/false), Arrays ([1, 2, 3]), Objects ({ name: "Dachi" }).
+
+2. DOM SELECTION & MANIPULATION
+- document.querySelector('selector'): Selects the first HTML element matching a CSS selector (e.g., '#id', '.class', 'tag').
+- element.textContent = "text": Changes or reads the text inside an HTML element.
+- element.value: Gets or sets what a user typed inside an <input> field.
+- document.createElement('tag'): Dynamically builds a brand-new HTML element in memory.
+- parent.appendChild(child): Inserts a created element inside a parent container on the page.
+- element.remove(): Deletes an element from the DOM.
+- element.classList.add('class') / .remove() / .toggle(): Modifies CSS classes on an element.
+
+3. EVENTS
+- element.addEventListener('click', () => { ... }): Listens for a specific browser action (like 'click', 'input', 'submit') and runs a function when it happens.
+
+4. CONTROL FLOW (CONDITIONS & LOOPS)
+- if (condition) { ... } else { ... }: Runs code based on whether a condition is true or false.
+- array.forEach(item => { ... }): Loops through every item in an array.
+- array.filter(item => condition): Loops through an array and returns a new array containing only items that pass the condition.
+
+5. LOCALSTORAGE (BROWSER MEMORY)
+- localStorage.setItem('key', value): Saves data into the browser's persistent memory (must be a string).
+- localStorage.getItem('key'): Retrieves saved data from the browser. Returns null if nothing is found.
+- JSON.stringify(arrayOrObject): Converts a JavaScript array or object into a text string so LocalStorage can save it.
+- JSON.parse(string): Converts a saved text string back into a usable JavaScript array or object.
+
+6. ARRAY METHODS MASTER LIST
+- array.push(item): Adds an item to the end of an array.
+- array.pop(): Removes the last item from an array.
+- array.unshift(item): Adds an item to the beginning of an array.
+- array.shift(): Removes the first item from an array.
+- array.splice(index, count): Deletes 'count' items starting at 'index' (mutates the original array).
+- array.slice(start, end): Copies a portion of an array into a new array without touching the original.
+- array.map(item => ...): Loops through an array, transforms every item, and returns a new array of the same length.
+- array.reduce((acc, curr) => ...): Condenses an array down to a single value.
+- array.find(item => condition): Returns the first item that matches a condition.
+- array.findIndex(item => condition): Returns the index number of the first item matching a condition.
+- array.includes(value): Checks if an array contains a specific value (true/false).
+- array.some(item => condition): Returns true if at least one item passes the condition.
+- array.every(item => condition): Returns true if every single item passes the condition.
+
+
+==================================================
+           API & FETCH() CHEAT SHEET
+==================================================
+
+1. WHAT IS AN API?
+- Definition: A messenger (like a waiter) that lets your frontend website talk to an external server/database to fetch data.
+- The Tool: fetch('URL') — Built-in JavaScript function used to make API requests.
+
+2. WHAT IS AN API KEY?
+- Definition: A secret password or VIP badge given to you by an API provider.
+- Purpose: Tracks usage, enforces rate limits (prevents server crashes), and handles billing.
+- Golden Rule: Never hardcode your API key directly into public front-end JavaScript files.
+
+3. PROTECTING KEYS (.ENV & .GITIGNORE)
+- .env file: A local file where you store secret variables (e.g., STEAM_API_KEY=abc123xyz).
+- .gitignore file: A configuration file telling Git which files to ignore. Always list .env here so it never gets pushed to GitHub.
+
+4. ANATOMY OF A FETCH REQUEST (ASYNC/AWAIT)
+async function getData() {
+    try {
+        const response = await fetch('/players', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ profileUrl })
+        });
+        const result = await response.json();
+    } catch (error) {
+        console.error('Network or parsing error:', error);
+    }
+}
+
+5. NAVIGATING JSON DATA (DOT NOTATION)
+- APIs return nested JavaScript objects. Use dots (.) to peel open layers and grab what you need.
+
+
+==================================================
+     ASYNC, AWAIT & ERROR HANDLING CHEAT SHEET
+==================================================
+
+1. SYNCHRONOUS VS. ASYNCHRONOUS JAVASCRIPT
+- Synchronous: Executes one line at a time top-to-bottom. Heavy tasks block the main thread.
+- Asynchronous: Background-processes heavy tasks (like network requests) without freezing the UI, handing results back via promises.
+
+2. PROMISES & ASYNC/AWAIT
+- async keyword: Placed before a function declaration to indicate it handles asynchronous operations and returns a Promise.
+- await keyword: Pauses execution inside an async function until a Promise resolves.
+- try...catch block: Safety net used to catch errors gracefully so the application doesn't crash.
+
+3. COMMON ERROR TYPES
+- TypeError: Trying to access a property on an undefined variable or empty object.
+- NetworkError / Failed to fetch: Computer cannot reach the server (incorrect URL or offline).
+- SyntaxError: Unexpected token (often caused by parsing an HTML error page like a 404 as JSON).
+
+
+==================================================
+         JAVASCRIPT FUNCTIONS CHEAT SHEET
+==================================================
+
+1. FUNCTION DECLARATION (The Standard Way)
+- Syntax:
+  function functionName(parameter1, parameter2) {
+      // Code to run
+      return result;
+  }
+- Usage: Hoisted by JavaScript (can be called before it's defined in the code file).
+
+2. FUNCTION EXPRESSION & ARROW FUNCTIONS (The Modern Way)
+- Arrow Function Syntax:
+  const functionName = (param1, param2) => {
+      return param1 + param2;
+  };
+- Implicit Return (for one-liners):
+  const add = (a, b) => a + b; // Automatically returns the result without 'return' or curly braces.
+
+3. PARAMETERS & ARGUMENTS
+- Parameters: Placeholders defined in the function signature (e.g., function greet(name)).
+- Arguments: The actual values passed into the function when called (e.g., greet("Dachi")).
+
+4. THE 'RETURN' KEYWORD
+- Definition: Sends a value back out of the function and immediately stops execution.
+- Note: If a function doesn't have a return statement, it automatically returns undefined.
+
+5. COMMON USE CASES
+- Reusability (DRY Principle): Writing code once and calling it multiple times with different data.
+- Event Listeners: button.addEventListener('click', () => { ... })
+- Array Methods: prices.map(price => price * 1.18)
+- API Calls: async function fetchData() { ... }
+
+
+==================================================
+                  HTML CHEAT SHEET
+==================================================
+
+1. CORE STRUCTURE & TAGS
+- <!DOCTYPE html>: Tells the browser this is a modern HTML5 document.
+- <html>: The root wrapper for the entire page.
+- <head>: Contains metadata, links to CSS files, and the page title.
+- <body>: Contains all visible content displayed on the screen.
+- <h1> to <h6>: Headings of varying importance.
+- <p>: Standard block of text.
+- <a href="url">: Hyperlink to other pages or sites.
+- <img src="url" alt="description">: Embeds an image.
+
+2. FORMS & USER INPUT
+- <form>: Wrapper for user input elements.
+- <input type="text">: Single-line text typing field.
+- <button>: Clickable action button.
+- id="unique-name": Unique identifier used by CSS and JavaScript to target a specific element.
+- class="name": Group identifier used to target multiple elements with the same styles.
+
+3. LISTS & CONTAINERS
+- <ul>: Unordered list (bulleted).
+- <ol>: Ordered list (numbered).
+- <li>: List item inside a <ul> or <ol>.
+- <div>: Generic container block used to group elements together for layout and styling.
+
+
+==================================================
+                  CSS CHEAT SHEET
+==================================================
+
+1. SELECTORS
+- Element selector (p, h1, ul): Styles all elements of that specific HTML tag type.
+- ID selector (#my-id): Targets a single specific element with that exact ID.
+- Class selector (.my-class): Targets any element sharing that class name.
+
+2. LAYOUT & FLEXBOX (display: flex)
+- display: flex;: Turns a container into a flexible box, letting its children align dynamically.
+- flex-direction: row / column;: Sets whether items flow horizontally (row) or vertically (column).
+- justify-content: space-between / center / flex-start;: Aligns items along the main axis.
+- align-items: center / flex-start;: Aligns items along the cross axis.
+- gap: 15px;: Creates clean, uniform spacing between flex items without messing with margins.
+
+3. STYLING & APPEARANCE
+- color: #hex;: Sets the text color.
+- background-color: #hex;: Sets the background color of an element.
+- font-size: 16px;: Controls text sizing.
+- border / border-radius: Adds outlines and rounded corners.
+- padding: Space inside an element's border.
+- margin: Space outside an element's border.
+
+4. CUSTOM PROPERTIES (VARIABLES)
+- Defining: :root { --main-color: #ff5733; }
+- Using: background-color: var(--main-color);
+
+
+==================================================
+     NODE.JS, EXPRESS & MONGODB CHEAT SHEET
+==================================================
+
+1. WHAT IS NODE.JS & EXPRESS?
+- Node.js: A JavaScript runtime environment that lets you execute JS outside the browser.
+- Express: A minimalist web framework built on top of Node.js that replaces the messy built-in `http` module with clean tools like `app.get()`, `app.post()`, and `res.json()`.
+- Express Middleware: `app.use(express.json())` parses incoming request bodies; `app.use(express.static('public'))` serves frontend files.
+
+2. EXPRESS HTTP METHODS & ROUTING
+- app.get('/route', async (req, res) => { ... }): Handles incoming GET requests to fetch data.
+- app.post('/route', async (req, res) => { ... }): Handles incoming POST requests to submit or create data.
+- app.delete('/route/:id', async (req, res) => { ... }): Handles DELETE requests targeting a specific record ID (`req.params.id`).
+- res.status(200).json({ success: true, data }): Sends structured JSON HTTP responses back to the frontend.
+
+3. MONGODB & MONGOOSE
+- mongoose.connect(process.env.MONGO_URI): Establishes a secure connection to your cloud database.
+- Schema: A blueprint defining the shape, types, and defaults of documents inside a collection (e.g., Player schema).
+- Model: A compiled wrapper around a schema that lets you perform database queries (`Player.find()`, `new Player().save()`, `Player.findOneAndDelete()`).
+
+
+==================================================
+             REACT FUNDAMENTALS CHEAT SHEET
+==================================================
+
+1. COMPONENTS
+- Modular, reusable UI building blocks written as JavaScript functions that return JSX (HTML-like syntax inside JS).
+
+2. STATE (useState)
+- Tracks data that changes over time inside a component. When state updates, React automatically re-renders the UI declaratively.
+- Syntax: const [state, setState] = useState(initialValue);
+
+3. EFFECTS (useEffect)
+- Runs side effects (like initial data fetching via `fetch()`, event listeners, or timers) when a component mounts or when dependencies change.
+- Syntax: useEffect(() => { ... }, [dependencies]);
